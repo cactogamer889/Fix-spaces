@@ -561,8 +561,6 @@ class FixSpaceGUI:
                 path
             )
 
-            logger.info(f"Loading children for {path}: {len(entries)} entries")
-
             # Calculate sizes for directories (just like scan_directory does)
             tasks = []
             for entry in entries:
@@ -572,7 +570,6 @@ class FixSpaceGUI:
                     tasks.append(task)
 
             # Wait for all size calculations
-            logger.info(f"Calculating {len(tasks)} folder sizes...")
             for task in asyncio.as_completed(tasks):
                 try:
                     await task
@@ -583,10 +580,7 @@ class FixSpaceGUI:
             entries.sort(key=lambda x: x["size"], reverse=True)
             max_size = max((e["size"] for e in entries), default=1)
 
-            logger.info(f"Ready to insert {len(entries)} children, max_size={max_size}")
-
             def insert_children():
-                logger.info(f"Inserting {len(entries)} children into tree...")
                 for entry in entries:
                     iid = str(uuid.uuid4())
                     self.path_map[iid] = entry["path"]
@@ -617,19 +611,16 @@ class FixSpaceGUI:
                 cached = self.async_scanner.cache.get(entry["path"])
                 if cached and self.async_scanner.cache.is_valid(entry["path"]):
                     entry["size"] = cached["size"]
-                    logger.debug(f"Cache hit for {entry['name']}: {entry['size']/(1024**3):.2f} GB")
                     return entry
 
             # Calculate size
             if entry["is_dir"]:
-                logger.debug(f"Calculating size for {entry['name']}...")
                 size = await loop.run_in_executor(
                     self.async_scanner.executor,
                     self.async_scanner.scanner.get_folder_size,
                     entry["path"]
                 )
                 entry["size"] = size
-                logger.debug(f"Calculated {entry['name']}: {size/(1024**3):.2f} GB")
 
                 # Cache result
                 if self.async_scanner.cache:

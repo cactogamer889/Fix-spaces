@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 # Windows API constants
 INVALID_HANDLE_VALUE = -1
 FILE_ATTRIBUTE_DIRECTORY = 0x10
+FILE_ATTRIBUTE_SYSTEM = 0x04
+FILE_ATTRIBUTE_HIDDEN = 0x02
 
 # ctypes function signatures
 FindFirstFileW = ctypes.windll.kernel32.FindFirstFileW
@@ -32,9 +34,14 @@ FindClose.restype = wintypes.BOOL
 class WindowsScanner:
     """Uses Windows native APIs for fast directory enumeration"""
 
-    def __init__(self):
-        """Initialize scanner"""
+    def __init__(self, hide_system_files: bool = True):
+        """Initialize scanner
+
+        Args:
+            hide_system_files: If True, skip Windows system files like desktop.ini
+        """
         self.max_path = 260
+        self.hide_system_files = hide_system_files
 
     def list_directory(self, path: str) -> List[Dict]:
         """
@@ -74,6 +81,14 @@ class WindowsScanner:
 
                     # Skip . and ..
                     if filename in ('.', '..'):
+                        if not FindNextFileW(handle, byref(find_data)):
+                            break
+                        continue
+
+                    # Skip Windows system files if hide_system_files is enabled
+                    is_system = bool(attributes & FILE_ATTRIBUTE_SYSTEM)
+                    is_hidden = bool(attributes & FILE_ATTRIBUTE_HIDDEN)
+                    if self.hide_system_files and (is_system or is_hidden):
                         if not FindNextFileW(handle, byref(find_data)):
                             break
                         continue

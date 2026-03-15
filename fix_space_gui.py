@@ -377,6 +377,9 @@ class FixSpaceGUI:
                     size = entry["size"]
                     is_dir = entry["is_dir"]
 
+                    # DEBUG
+                    logger.info(f"Inserting: {name} is_dir={is_dir} size={size} size_gb={size/(1024**3):.2f}GB")
+
                     iid = str(uuid.uuid4())
                     self.path_map[iid] = full
                     tag = self.size_tag(size, max_size)

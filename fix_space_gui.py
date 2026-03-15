@@ -212,7 +212,21 @@ class FixSpaceGUI:
         self.path_var = tk.StringVar()
         self.path_entry = ttk.Entry(ctrl, textvariable=self.path_var, width=40)
         self.path_entry.pack(side='left', padx=(4, 8))
+
+        def on_path_focus_in(event):
+            if self.path_entry.get() == 'ex: C:\\Users':
+                self.path_entry.delete(0, tk.END)
+                self.path_entry.config(foreground='black')
+
+        def on_path_focus_out(event):
+            if self.path_entry.get() == '':
+                self.path_entry.insert(0, 'ex: C:\\Users')
+                self.path_entry.config(foreground='gray')
+
         self.path_entry.insert(0, 'ex: C:\\Users')
+        self.path_entry.config(foreground='gray')
+        self.path_entry.bind('<FocusIn>', on_path_focus_in)
+        self.path_entry.bind('<FocusOut>', on_path_focus_out)
 
         self.scan_btn = ttk.Button(ctrl, text='Analisar', command=self.start_scan)
         self.scan_btn.pack(side='left')
@@ -395,9 +409,6 @@ class FixSpaceGUI:
                     full = entry["path"]
                     size = entry["size"]
                     is_dir = entry["is_dir"]
-
-                    # DEBUG
-                    logger.info(f"Inserting: {name} is_dir={is_dir} size={size} size_gb={size/(1024**3):.2f}GB")
 
                     iid = str(uuid.uuid4())
                     self.path_map[iid] = full

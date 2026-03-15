@@ -207,6 +207,13 @@ class FixSpaceGUI:
             self.drive_combo.current(0)
         self.drive_combo.pack(side='left', padx=(4, 8))
 
+        # Caminho personalizado
+        ttk.Label(ctrl, text='ou Caminho:').pack(side='left', padx=(8, 0))
+        self.path_var = tk.StringVar()
+        self.path_entry = ttk.Entry(ctrl, textvariable=self.path_var, width=40)
+        self.path_entry.pack(side='left', padx=(4, 8))
+        self.path_entry.insert(0, 'ex: C:\\Users')
+
         self.scan_btn = ttk.Button(ctrl, text='Analisar', command=self.start_scan)
         self.scan_btn.pack(side='left')
         self.stop_btn = ttk.Button(ctrl, text='Parar', command=self.stop_scan, state='disabled')
@@ -306,9 +313,21 @@ class FixSpaceGUI:
     def start_scan(self):
         if self.scanning:
             return
-        drive = self.drive_var.get()
+
+        # Usar caminho personalizado se fornecido, senão usar unidade selecionada
+        custom_path = self.path_var.get().strip()
+        if custom_path and custom_path != 'ex: C:\\Users':
+            drive = custom_path
+        else:
+            drive = self.drive_var.get()
+
         if not drive:
-            messagebox.showwarning('Unidade não selecionada', 'Escolha uma unidade para analisar.')
+            messagebox.showwarning('Caminho não selecionado', 'Escolha uma unidade ou digite um caminho.')
+            return
+
+        # Validar se o caminho existe
+        if not os.path.exists(drive):
+            messagebox.showerror('Caminho inválido', f'O caminho não existe:\n{drive}')
             return
         # prepare
         for iid in self.tree.get_children(''):

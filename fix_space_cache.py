@@ -23,7 +23,8 @@ class DiskCache:
 
         self.cache_path = cache_path
         self._lock = threading.Lock()  # Thread-safe access to SQLite
-        self.conn = sqlite3.connect(cache_path)
+        # Allow connection to be used from multiple threads (protected by _lock)
+        self.conn = sqlite3.connect(cache_path, check_same_thread=False)
         self._init_db()
 
     def _init_db(self):

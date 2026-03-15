@@ -89,15 +89,23 @@ class WindowsScanner:
                     # Skip Windows system files, junctions, symlinks if hide_system_files is enabled
                     is_system = bool(attributes & FILE_ATTRIBUTE_SYSTEM)
                     is_hidden = bool(attributes & FILE_ATTRIBUTE_HIDDEN)
+                    is_dir = bool(attributes & FILE_ATTRIBUTE_DIRECTORY)
                     is_reparse = bool(attributes & FILE_ATTRIBUTE_REPARSE_POINT)  # Junctions, symlinks
 
-                    # Skip system files, hidden files, and reparse points (junctions/symlinks)
-                    if self.hide_system_files and (is_system or is_hidden or is_reparse):
-                        if not FindNextFileW(handle, byref(find_data)):
-                            break
-                        continue
+                    # Skip system files and reparse points (junctions/symlinks) always
+                    # But only skip hidden files if they're not directories
+                    # (we need to see hidden folders like AppData)
+                    if self.hide_system_files:
+                        if is_system or is_reparse:
+                            if not FindNextFileW(handle, byref(find_data)):
+                                break
+                            continue
+                        # Only hide hidden FILES, not hidden DIRECTORIES
+                        if is_hidden and not is_dir:
+                            if not FindNextFileW(handle, byref(find_data)):
+                                break
+                            continue
 
-                    is_dir = bool(attributes & FILE_ATTRIBUTE_DIRECTORY)
                     size = (size_high << 32) | size_low
                     full_path = os.path.join(path, filename)
 

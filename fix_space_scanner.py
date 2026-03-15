@@ -137,11 +137,16 @@ class WindowsScanner:
             entries = self.list_directory(path)
 
             for entry in entries:
-                if entry["is_dir"]:
-                    # Recursively sum subdirectories
-                    total += self.get_folder_size(entry["path"], use_cache)
-                else:
-                    total += entry["size"]
+                try:
+                    if entry["is_dir"]:
+                        # Recursively sum subdirectories
+                        total += self.get_folder_size(entry["path"], use_cache)
+                    else:
+                        total += entry["size"]
+                except Exception as e:
+                    # Log but continue with other files
+                    logger.debug(f"Error with {entry.get('path')}: {e}")
+                    continue
 
         except Exception as e:
             logger.warning(f"Error calculating folder size for {path}: {e}")

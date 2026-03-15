@@ -552,7 +552,7 @@ class FixSpaceGUI:
             pass
 
     async def _async_load_children(self, parent_iid: str, path: str):
-        """Async load children"""
+        """Async load children with size calculation for subdirectories"""
         try:
             loop = asyncio.get_event_loop()
             entries = await loop.run_in_executor(
@@ -561,6 +561,19 @@ class FixSpaceGUI:
                 path
             )
 
+            # Calculate sizes for directories (just like scan_directory does)
+            tasks = []
+            for entry in entries:
+                if entry["is_dir"]:
+                    # Create task to calculate folder size
+                    task = self._calculate_entry_size_async(entry)
+                    tasks.append(task)
+
+            # Wait for all size calculations
+            for task in asyncio.as_completed(tasks):
+                await task
+
+            # Sort by size
             entries.sort(key=lambda x: x["size"], reverse=True)
             max_size = max((e["size"] for e in entries), default=1)
 
@@ -584,6 +597,37 @@ class FixSpaceGUI:
             self.root.after(0, insert_children)
         except Exception as e:
             logger.exception(f"Error loading children: {e}")
+
+    async def _calculate_entry_size_async(self, entry: dict) -> dict:
+        """Calculate folder size in thread pool"""
+        loop = asyncio.get_event_loop()
+
+        # Check cache
+        if self.async_scanner.cache:
+            cached = self.async_scanner.cache.get(entry["path"])
+            if cached and self.async_scanner.cache.is_valid(entry["path"]):
+                entry["size"] = cached["size"]
+                return entry
+
+        # Calculate size
+        if entry["is_dir"]:
+            size = await loop.run_in_executor(
+                self.async_scanner.executor,
+                self.async_scanner.scanner.get_folder_size,
+                entry["path"]
+            )
+            entry["size"] = size
+
+            # Cache result
+            if self.async_scanner.cache:
+                import os
+                try:
+                    mtime = os.path.getmtime(entry["path"])
+                    self.async_scanner.cache.set(entry["path"], size, True, mtime)
+                except:
+                    pass
+
+        return entry
 
     def on_tree_select(self, event):
         sel = self.tree.selection()

@@ -17,6 +17,7 @@ INVALID_HANDLE_VALUE = -1
 FILE_ATTRIBUTE_DIRECTORY = 0x10
 FILE_ATTRIBUTE_SYSTEM = 0x04
 FILE_ATTRIBUTE_HIDDEN = 0x02
+FILE_ATTRIBUTE_REPARSE_POINT = 0x400  # Junctions, symlinks, etc
 
 # ctypes function signatures
 FindFirstFileW = ctypes.windll.kernel32.FindFirstFileW
@@ -85,10 +86,13 @@ class WindowsScanner:
                             break
                         continue
 
-                    # Skip Windows system files if hide_system_files is enabled
+                    # Skip Windows system files, junctions, symlinks if hide_system_files is enabled
                     is_system = bool(attributes & FILE_ATTRIBUTE_SYSTEM)
                     is_hidden = bool(attributes & FILE_ATTRIBUTE_HIDDEN)
-                    if self.hide_system_files and (is_system or is_hidden):
+                    is_reparse = bool(attributes & FILE_ATTRIBUTE_REPARSE_POINT)  # Junctions, symlinks
+
+                    # Skip system files, hidden files, and reparse points (junctions/symlinks)
+                    if self.hide_system_files and (is_system or is_hidden or is_reparse):
                         if not FindNextFileW(handle, byref(find_data)):
                             break
                         continue

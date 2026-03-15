@@ -49,6 +49,8 @@ class AsyncDiskScanner:
         Returns:
             List of entries with size info
         """
+        import time
+        start_time = time.time()
         self._stop_flag = False
         loop = asyncio.get_event_loop()
 
@@ -83,6 +85,9 @@ class AsyncDiskScanner:
             if progress_callback:
                 progress_callback(entry["path"], total_size, count)
 
+        import time
+        elapsed = time.time() - start_time
+        logger.info(f"Scan completed in {elapsed:.2f}s for {len(entries)} entries")
         return entries
 
     async def _get_folder_size_async(self, entry: Dict) -> Dict:

@@ -1,12 +1,4 @@
-.venv/
-__pycache__/
-*.pyc
-.pytest_cache/
-*.egg-info/
-build/
-dist/
-.DS_Store
-.idea/
-*.swp
-*.swo
+/target
 *.db
+debug.log
+debug_err.log

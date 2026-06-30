@@ -1,2 +1,0 @@
-# No external dependencies required for core functionality
-# stdlib modules used: asyncio, sqlite3, ctypes, concurrent.futures, threading
